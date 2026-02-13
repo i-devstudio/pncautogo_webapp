@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จองคิวล้างรถถึงบ้าน - Delivery Car Wash</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #1a5d1a; border: none; }
+        .btn-primary:hover { background-color: #144514; }
+        .car-item { background: #fff; border-left: 5px solid #1a5d1a; margin-bottom: 10px; padding: 10px; border-radius: 5px; }
+        .price-tag { font-size: 1.2rem; font-weight: bold; color: #1a5d1a; }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">จองคิวล้างรถถึงบ้าน 🧼</h2>
+        <p class="text-muted">บริการทำความสะอาดรถระดับพรีเมียมถึงหน้าบ้านคุณ</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card p-4 mb-4">
+                <h5 class="mb-3">1. ข้อมูลผู้จอง</h5>
+                <div class="mb-3">
+                    <label class="form-label">เบอร์โทรศัพท์</label>
+                    <input type="tel" id="phone" class="form-control" placeholder="08XXXXXXXX" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">ชื่อ-นามสกุล</label>
+                    <input type="text" id="custName" class="form-control" placeholder="ระบุชื่อของคุณ">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">ที่อยู่ / จุดสังเกต</label>
+                    <textarea id="address" class="form-control" rows="2" placeholder="บ้านเลขที่, ซอย, หมู่บ้าน"></textarea>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="getLocation()">📍 ปักหมุดพิกัดปัจจุบัน</button>
+                <input type="hidden" id="mapUrl">
+            </div>
+
+            <div class="card p-4 mb-4">
+                <h5 class="mb-3">2. รายละเอียดรถ</h5>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">ประเภทรถ</label>
+                        <select id="vType" class="form-select" onchange="updatePriceOptions()">
+                            <option value="car">รถยนต์ทั่วไป</option>
+                            <option value="bigCar">รถใหญ่ (6 ล้อ+)</option>
+                            <option value="bike">มอเตอร์ไซค์</option>
+                            <option value="bigBike">Big Bike (300cc+)</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">ขนาด/รุ่น</label>
+                        <select id="vSize" class="form-select" onchange="calculateCurrentPrice()">
+                            </select>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label">เลือกแพ็คเกจ</label>
+                    <div id="packageArea">
+                        </div>
+                </div>
+
+                <div class="form-check mt-3" id="evOption" style="display:none;">
+                    <input class="form-check-input" type="checkbox" id="isEV" onchange="calculateCurrentPrice()">
+                    <label class="form-check-label">เป็นรถยนต์ EV (+100 บาท)</label>
+                </div>
+
+                <div class="mt-4 p-3 bg-light rounded text-center">
+                    <span class="text-muted">ราคาคันนี้:</span>
+                    <span id="currentPriceDisplay" class="price-tag">0</span> ฿
+                    <button type="button" class="btn btn-primary d-block w-100 mt-2" onclick="addCar()">+ เพิ่มลงในรายการจอง</button>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-4">
+                <h5 class="mb-3">3. สรุปรายการจอง</h5>
+                <div id="carList">
+                    <p class="text-muted text-center">ยังไม่มีรายการรถ</p>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <label class="form-label">วันที่และเวลาที่สะดวก</label>
+                    <input type="datetime-local" id="appointTime" class="form-control">
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold">ยอดรวมสุทธิ:</span>
+                        <span id="totalPrice" class="price-tag">0</span> ฿
+                    </div>
+                    <button class="btn btn-success btn-lg" onclick="submitBooking()">ยืนยันการจองคิว</button>
+                </div>
+                <small class="text-danger mt-2 d-block">* ฟรีค่าเดินทาง 18 กม. แรกจากรังสิต</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let cart = [];
+    const priceData = {
+        car: {
+            sizes: { 'S': 'S (Yaris, City)', 'M': 'M (Civic, Altis)', 'L': 'L (SUV, กระบะ)' },
+            packages: [
+                { name: 'ล้าง+ดูดฝุ่น+เช็ดแห้ง', prices: { S: 350, M: 450, L: 550 } },
+                { name: 'ล้าง+ดูดฝุ่น+เคลือบเงา', prices: { S: 450, M: 550, L: 650 } }
+            ]
+        },
+        bike: {
+            sizes: { 'ทั่วไป': 'มอเตอร์ไซค์ทั่วไป' },
+            packages: [{ name: 'ล้างปกติ', prices: { 'ทั่วไป': 200 } }]
+        }
+    };
+
+    function updatePriceOptions() {
+        const type = document.getElementById('vType').value;
+        const sizeSelect = document.getElementById('vSize');
+        const pkgArea = document.getElementById('packageArea');
+        const evOpt = document.getElementById('evOption');
+
+        // อัปเดตขนาดรถ
+        sizeSelect.innerHTML = '';
+        const sizes = type === 'car' ? priceData.car.sizes : { 'std': 'มาตรฐาน' };
+        for (let k in sizes) {
+            sizeSelect.innerHTML += `<option value="${k}">${sizes[k]}</option>`;
+        }
+
+        // อัปเดตแพ็คเกจ (ตัวอย่างแบบย่อ)
+        pkgArea.innerHTML = type === 'car' ? 
+            `<select id="pkg" class="form-select" onchange="calculateCurrentPrice()">
+                <option value="350">ล้าง+ดูดฝุ่น+เช็ดแห้ง</option>
+                <option value="450">ล้าง+ดูดฝุ่น+เคลือบเงา</option>
+            </select>` : 
+            `<input type="text" class="form-control" value="ล้างทำความสะอาด" readonly>`;
+        
+        evOpt.style.display = type === 'car' ? 'block' : 'none';
+        calculateCurrentPrice();
+    }
+
+    function calculateCurrentPrice() {
+        const type = document.getElementById('vType').value;
+        const size = document.getElementById('vSize').value;
+        let price = 0;
+
+        if (type === 'car') {
+            const base = parseInt(document.getElementById('pkg').value);
+            const sizeAdd = size === 'M' ? 100 : (size === 'L' ? 200 : 0);
+            price = base + sizeAdd;
+            if (document.getElementById('isEV').checked) price += 100;
+        } else {
+            price = type === 'bike' ? 200 : 400;
+        }
+
+        document.getElementById('currentPriceDisplay').innerText = price;
+    }
+
+    function addCar() {
+        const car = {
+            type: document.getElementById('vType').value,
+            size: document.getElementById('vSize').value,
+            price: parseInt(document.getElementById('currentPriceDisplay').innerText)
+        };
+        cart.push(car);
+        renderCart();
+    }
+
+    function renderCart() {
+        const list = document.getElementById('carList');
+        list.innerHTML = '';
+        let total = 0;
+        cart.forEach((item, index) => {
+            total += item.price;
+            list.innerHTML += `
+                <div class="car-item d-flex justify-content-between align-items-center">
+                    <div><b>${item.type} (${item.size})</b> - ${item.price} ฿</div>
+                    <button class="btn btn-sm btn-danger" onclick="cart.splice(${index},1); renderCart();">ลบ</button>
+                </div>`;
+        });
+        
+        // Promotion Logic
+        if (cart.length >= 10) total *= 0.85;
+        else if (cart.length >= 5) total *= 0.90;
+
+        document.getElementById('totalPrice').innerText = Math.round(total);
+    }
+
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('mapUrl').value = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                alert("ปักหมุดสำเร็จ!");
+            });
+        }
+    }
+
+    async function submitBooking() {
+    // แทนที่ตรงนี้ด้วย URL ที่ได้จากตอนกด Deploy ใน Google Apps Script
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz74EOmoVL3NLCZpVc6lx68cy8ATpulBW05TU3Iu0x0OvNTozzO4BoizVLe6ktmkFe0/exec"; 
+
+    const data = {
+        customerName: document.getElementById('custName').value,
+        phone: document.getElementById('phone').value,
+        address: document.getElementById('address').value,
+        mapUrl: document.getElementById('mapUrl').value,
+        appointment: document.getElementById('appointTime').value,
+        cars: cart
+    };
+
+    if (cart.length === 0) {
+        alert("กรุณาเพิ่มรายการรถอย่างน้อย 1 คัน");
+        return;
+    }
+
+    try {
+        // เปลี่ยนสถานะปุ่มเพื่อป้องกันการกดซ้ำ
+        const btn = document.querySelector("button[onclick='submitBooking()']");
+        btn.innerText = "กำลังส่งข้อมูล...";
+        btn.disabled = true;
+
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors', // สำคัญ: เพื่อให้ส่งข้าม Domain ไป Google ได้
+            cache: 'no-cache',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        alert("จองคิวสำเร็จ! ขอบคุณที่ใช้บริการครับ");
+        location.reload(); // รีโหลดหน้าเว็บเพื่อล้างข้อมูลใหม่
+
+    } catch (error) {
+        console.error(error);
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่หรือติดต่อทาง Line");
+    }
+}
+
+    updatePriceOptions();
+</script>
+
+</body>
+</html>
