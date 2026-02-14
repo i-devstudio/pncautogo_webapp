@@ -6,44 +6,76 @@
     <title>จองคิวล้างรถถึงบ้าน - Delivery Car Wash</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f8f9fa; font-family: 'ChulaCharasNew', 'Segoe UI', Tahoma, sans-serif; }
         .card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .btn-primary { background-color: #1a5d1a; border: none; }
         .btn-primary:hover { background-color: #144514; }
-        .car-item { background: #fff; border-left: 5px solid #1a5d1a; margin-bottom: 10px; padding: 10px; border-radius: 5px; }
+        .car-item { background: #fff; border-left: 5px solid #1a5d1a; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .price-tag { font-size: 1.2rem; font-weight: bold; color: #1a5d1a; }
+        #searchResult { z-index: 1050; }
+        .address-search-container { position: relative; }
     </style>
 </head>
 <body>
 
-<div class="container py-4">
-    <div class="text-center mb-4">
-        <h2 class="fw-bold">จองคิวล้างรถถึงบ้าน 🧼</h2>
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">🧼 จองคิวล้างรถถึงบ้าน</h2>
         <p class="text-muted">บริการทำความสะอาดรถระดับพรีเมียมถึงหน้าบ้านคุณ</p>
     </div>
 
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card p-4 mb-4">
-                <h5 class="mb-3">1. ข้อมูลผู้จอง</h5>
+                <h5 class="mb-3 fw-bold text-success">1. ข้อมูลผู้จอง</h5>
                 <div class="mb-3">
                     <label class="form-label">เบอร์โทรศัพท์</label>
-                    <input type="tel" id="phone" class="form-control" placeholder="08XXXXXXXX" required>
+                    <input type="tel" id="phone" class="form-control form-control-lg" placeholder="08XXXXXXXX" oninput="checkHistory(this.value)" required>
+                    <div id="historyStatus" class="form-text text-success" style="display:none;">✨ พบข้อมูลเก่าของคุณ ระบบกำลังกรอกข้อมูลให้...</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">ชื่อ-นามสกุล</label>
                     <input type="text" id="custName" class="form-control" placeholder="ระบุชื่อของคุณ">
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">ที่อยู่ / จุดสังเกต</label>
-                    <textarea id="address" class="form-control" rows="2" placeholder="บ้านเลขที่, ซอย, หมู่บ้าน"></textarea>
+                
+                <div class="address-search-container mb-3">
+                  <label class="form-label fw-bold text-primary">🔍 ค้นหาที่อยู่ด่วน (พิมพ์ชื่อตำบล หรือ รหัสไปรษณีย์)</label>
+                  <input type="text" id="addressSearch" class="form-control" placeholder="เช่น ลาดพร้าว หรือ 10230" oninput="searchAddress(this.value)">
+                  <div id="searchResult" class="list-group position-absolute w-100 shadow"></div>
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="getLocation()">📍 ปักหมุดพิกัดปัจจุบัน</button>
-                <input type="hidden" id="mapUrl">
+
+                <div class="mb-3">
+                    <label class="form-label">บ้านเลขที่ / จุดสังเกต</label>
+                    <textarea id="addressDetail" class="form-control" rows="2" placeholder="บ้านเลขที่, ซอย, ชื่อหมู่บ้าน"></textarea>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">จังหวัด</label>
+                        <select id="province" class="form-select" onchange="changeProvince()"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">อำเภอ</label>
+                        <select id="amphure" class="form-select" onchange="changeAmphure()"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">ตำบล</label>
+                        <select id="tambon" class="form-select" onchange="changeTambon()"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">รหัสไปรษณีย์</label>
+                        <input type="text" id="zipcode" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small">ลิงก์ Google Maps (ถ้ามี)</label>
+                    <input type="url" id="mapUrl" class="form-control" placeholder="https://goo.gl/maps/...">
+                </div>
             </div>
 
             <div class="card p-4 mb-4">
-                <h5 class="mb-3">2. รายละเอียดรถ</h5>
+                <h5 class="mb-3 fw-bold text-success">2. รายละเอียดรถ</h5>
                 <div class="row g-2">
                     <div class="col-6">
                         <label class="form-label">ประเภทรถ</label>
@@ -56,15 +88,19 @@
                     </div>
                     <div class="col-6">
                         <label class="form-label">ขนาด/รุ่น</label>
-                        <select id="vSize" class="form-select" onchange="calculateCurrentPrice()">
-                            </select>
+                        <select id="vSize" class="form-select" onchange="setBasePrice()"></select>
                     </div>
                 </div>
 
-                <div class="mt-3">
-                    <label class="form-label">เลือกแพ็คเกจ</label>
-                    <div id="packageArea">
-                        </div>
+                <div class="row mt-3 g-2">
+                    <div class="col-6">
+                        <label class="form-label small text-muted">ราคาฐาน (แก้ไขได้)</label>
+                        <input type="number" id="manualPrice" class="form-control" oninput="calculateCurrentPrice()">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted">ส่วนลดพิเศษ (บาท)</label>
+                        <input type="number" id="individualDiscount" class="form-control" oninput="calculateCurrentPrice()" value="0">
+                    </div>
                 </div>
 
                 <div class="form-check mt-3" id="evOption" style="display:none;">
@@ -72,203 +108,345 @@
                     <label class="form-check-label">เป็นรถยนต์ EV (+100 บาท)</label>
                 </div>
                 <div class="form-check mt-3" id="chainOption" style="display:none;">
-                  <input class="form-check-input" type="checkbox" id="isChainClean" onchange="calculateCurrentPrice()">
-                  <label class="form-check-label">ล้างโซ่ + เคลือบ (+120 บาท)</label>
+                    <input class="form-check-input" type="checkbox" id="isChainClean" onchange="calculateCurrentPrice()">
+                    <label class="form-check-label">ล้างโซ่ + เคลือบ (+120 บาท)</label>
                 </div>
-              
-              <div class="row mt-3">
-                  <div class="col-6">
-                      <label class="form-label">ราคาประเมิน/แก้ไข (บาท)</label>
-                      <input type="number" id="manualPrice" class="form-control" oninput="calculateCurrentPrice()" placeholder="ราคาเริ่มต้น">
-                  </div>
-                  <div class="col-6">
-                      <label class="form-label">ส่วนลด (บาท)</label>
-                      <input type="number" id="individualDiscount" class="form-control" oninput="calculateCurrentPrice()" value="0">
-                  </div>
-              </div>
 
-                <div class="mt-4 p-3 bg-light rounded text-center">
-                    <span class="text-muted">ราคาคันนี้:</span>
+                <div class="mt-4 p-3 bg-light rounded text-center border">
+                    <span class="text-muted">ราคาสุทธิคันนี้:</span>
                     <span id="currentPriceDisplay" class="price-tag">0</span> ฿
-                    <button type="button" class="btn btn-primary d-block w-100 mt-2" onclick="addCar()">+ เพิ่มลงในรายการจอง</button>
+                    <button type="button" class="btn btn-primary d-block w-100 mt-2" onclick="addCar()">+ เพิ่มคันนี้ลงในรายการ</button>
                 </div>
             </div>
 
-            <div class="card p-4 mb-4">
-                <h5 class="mb-3">3. สรุปรายการจอง</h5>
-                <div id="carList">
-                    <p class="text-muted text-center">ยังไม่มีรายการรถ</p>
+            <div class="card p-4 mb-4 shadow-sm border-success" style="border-width: 2px;">
+                <h5 class="mb-3 fw-bold">3. สรุปรายการจอง</h5>
+                <div id="carList" class="mb-3">
+                    <p class="text-muted text-center">ยังไม่มีรายการรถที่เพิ่มเข้ามา</p>
                 </div>
                 <hr>
                 <div class="mb-3">
-                    <label class="form-label">วันที่และเวลาที่สะดวก</label>
+                    <label class="form-label fw-bold">เลือกวันที่และเวลาที่ต้องการ</label>
                     <input type="datetime-local" id="appointTime" class="form-control">
                 </div>
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <span class="fw-bold">ยอดรวมสุทธิ:</span>
-                        <span id="totalPrice" class="price-tag">0</span> ฿
+                <div class="p-3 bg-success bg-opacity-10 rounded">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-dark">ยอดรวมทั้งหมด:</div>
+                        <div><span id="totalPrice" class="price-tag text-success fs-2">0</span> ฿</div>
                     </div>
-                    <button class="btn btn-success btn-lg" onclick="submitBooking()">ยืนยันการจองคิว</button>
+                    <small id="discountNote" class="text-primary d-block mt-1"></small>
                 </div>
-                <small class="text-danger mt-2 d-block">* ฟรีค่าเดินทาง 18 กม. แรกจากรังสิต</small>
+                <button class="btn btn-success btn-lg w-100 mt-4 py-3 fw-bold shadow" onclick="submitBooking()">ยืนยันการจองคิว</button>
+                <small class="text-danger mt-3 d-block text-center">* บริการรังสิตและพื้นที่ใกล้เคียง (ฟรีค่าเดินทาง 18 กม. แรก)</small>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-  let cart = [];
-  const defaultPrices = {
-      car: { S: 350, M: 450, L: 550 },
-      bigCar: { '6 ล้อขึ้นไป': 600 },
-      bike: { 'ทั่วไป': 200 },
-      bigBike: { '300cc+': 300 }
-  };
+    let cart = [];
+    let addressData = { provinces: [], amphures: [], tambons: [] };
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxOpK7KAcAQG-DnSNl5C7aETDU5PX0ePAa95EDeU5i4DwnaYH5Gxex0ssPfAV8xEegG/exec"; 
 
-  function getLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(pos) {
-            var lat = pos.coords.latitude;
-            var lng = pos.coords.longitude;
+    const defaultPrices = {
+        car: { S: 350, M: 450, L: 550 },
+        bigCar: { '6 ล้อขึ้นไป': 600 },
+        bike: { 'ทั่วไป': 200 },
+        bigBike: { '300cc+': 300 }
+    };
+
+    // --- ระบบที่อยู่ ---
+    async function loadAddressData() {
+        try {
+            const [p, a, t] = await Promise.all([
+                fetch('province.json').then(res => res.json()),
+                fetch('amphor.json').then(res => res.json()),
+                fetch('tumbon.json').then(res => res.json())
+            ]);
+            addressData = { provinces: p, amphures: a, tambons: t };
             
-            // ลิงก์ที่สมบูรณ์ต้องมีทั้ง lat และ lng คั่นด้วยเครื่องหมายคอมม่า (,)
-            // รูปแบบ: https://www.google.com/maps?q=LAT,LNG
-            var mapUrl = "https://www.google.com/maps?q=" + lat + "," + lng;
-            
-            document.getElementById('mapUrl').value = mapUrl;
-            alert("📍 ปักหมุดสำเร็จ!\nพิกัดของคุณคือ: " + lat + ", " + lng);
-        }, function(error) {
-            alert("ไม่สามารถดึงพิกัดได้: " + error.message);
-        }, { enableHighAccuracy: true });
+            const pSelect = document.getElementById('province');
+            pSelect.innerHTML = '<option value="">เลือกจังหวัด</option>';
+            addressData.provinces.sort((a,b) => a.name_th.localeCompare(b.name_th)).forEach(item => {
+                pSelect.options.add(new Option(item.name_th, item.id));
+            });
+        } catch (err) { console.error("Error loading address:", err); }
     }
-}
 
-  function updatePriceOptions() {
-      const type = document.getElementById('vType').value;
-      const sizeSelect = document.getElementById('vSize');
-      const evOpt = document.getElementById('evOption');
-      const chainOpt = document.getElementById('chainOption');
+    function changeProvince() {
+        const pId = document.getElementById('province').value;
+        const aSelect = document.getElementById('amphure');
+        const tSelect = document.getElementById('tambon');
+        aSelect.innerHTML = '<option value="">เลือกอำเภอ</option>';
+        tSelect.innerHTML = '<option value="">เลือกตำบล</option>';
+        document.getElementById('zipcode').value = '';
 
-      sizeSelect.innerHTML = '';
-      if (type === 'car') {
-          sizeSelect.innerHTML = `<option value="S">S (Yaris, City)</option><option value="M">M (Civic, Altis)</option><option value="L">L (SUV, กระบะ)</option>`;
-          evOpt.style.display = 'block';
-          chainOpt.style.display = 'none';
-      } else {
-          const label = type === 'bike' ? 'ทั่วไป' : (type === 'bigBike' ? '300cc+' : '6 ล้อขึ้นไป');
-          sizeSelect.innerHTML = `<option value="${label}">${label}</option>`;
-          evOpt.style.display = 'none';
-          chainOpt.style.display = (type === 'bike' || type === 'bigBike') ? 'block' : 'none';
-      }
-      setBasePrice();
-  }
+        if(!pId) return;
+        const filtered = addressData.amphures.filter(item => item.province_id == pId);
+        filtered.forEach(item => aSelect.options.add(new Option(item.name_th, item.id)));
+    }
 
-  function setBasePrice() {
-      const type = document.getElementById('vType').value;
-      const size = document.getElementById('vSize').value;
-      document.getElementById('manualPrice').value = defaultPrices[type][size] || 0;
-      calculateCurrentPrice();
-  }
+    function changeAmphure() {
+        const aId = document.getElementById('amphure').value;
+        const tSelect = document.getElementById('tambon');
+        tSelect.innerHTML = '<option value="">เลือกตำบล</option>';
+        document.getElementById('zipcode').value = '';
 
-  function calculateCurrentPrice() {
-      const type = document.getElementById('vType').value;
-      let basePrice = parseInt(document.getElementById('manualPrice').value) || 0;
-      let discount = parseInt(document.getElementById('individualDiscount').value) || 0;
-      let extra = 0;
+        if(!aId) return;
+        const filtered = addressData.tambons.filter(item => item.amphure_id == aId);
+        filtered.forEach(item => tSelect.options.add(new Option(item.name_th, item.id)));
+    }
 
-      if (type === 'car' && document.getElementById('isEV').checked) extra += 100;
-      // แก้ไขการเช็ค checkbox ให้ปลอดภัยขึ้น
-      const chainClean = document.getElementById('isChainClean');
-      if (chainClean && chainClean.checked) extra += 120;
+    function changeTambon() {
+        const tId = document.getElementById('tambon').value;
+        const tambon = addressData.tambons.find(item => item.id == tId);
+        if (tambon) document.getElementById('zipcode').value = tambon.zip_code;
+    }
 
-      let finalPrice = (basePrice + extra) - discount;
-      document.getElementById('currentPriceDisplay').innerText = finalPrice < 0 ? 0 : finalPrice;
-  }
+    function searchAddress(query) {
+        const resultBox = document.getElementById('searchResult');
+        if (query.length < 2) {
+            resultBox.innerHTML = '';
+            return;
+        }
 
-  function addCar() {
-    const typeSelect = document.getElementById('vType');
-    const chainClean = document.getElementById('isChainClean');
-    const isEV = document.getElementById('isEV');
-    const basePriceInput = document.getElementById('manualPrice').value;
-    const discountInput = document.getElementById('individualDiscount').value;
-    
-    const car = {
-        typeName: typeSelect.options[typeSelect.selectedIndex].text,
-        size: document.getElementById('vSize').value,
-        basePrice: basePriceInput, // ราคาประเมิน/แก้ไข
-        discount: discountInput,   // ส่วนลดรายคัน
-        addon: (chainClean && chainClean.checked) ? "ล้างโซ่" : (isEV && isEV.checked ? "EV" : "-"),
-        price: parseInt(document.getElementById('currentPriceDisplay').innerText) // ราคาสุทธิคันนี้
-    };
-    cart.push(car);
-    renderCart();
-    
-    // Reset ค่าส่วนลดหลังเพิ่มรถเสร็จ
-    document.getElementById('individualDiscount').value = 0;
-    if(chainClean) chainClean.checked = false;
-    if(isEV) isEV.checked = false;
-}
+        const matches = addressData.tambons.filter(item => 
+            item.zip_code.toString().includes(query) || item.name_th.includes(query)
+        ).slice(0, 10);
 
-  function renderCart() {
-      const list = document.getElementById('carList');
-      list.innerHTML = '';
-      let total = 0;
-      cart.forEach((item, index) => {
-          total += item.price;
-          list.innerHTML += `<div class="car-item d-flex justify-content-between align-items-center mb-2">
-              <div><b>${item.typeName} (${item.size})</b><br><small>ราคา ${item.price} ฿</small></div>
-              <button class="btn btn-sm btn-danger" onclick="cart.splice(${index},1); renderCart();">ลบ</button>
-          </div>`;
-      });
-      
-      let finalTotal = total;
-      if (cart.length >= 10) finalTotal *= 0.85;
-      else if (cart.length >= 5) finalTotal *= 0.90;
-      document.getElementById('totalPrice').innerText = Math.round(finalTotal);
-  }
+        resultBox.innerHTML = matches.map(item => {
+            const amphure = addressData.amphures.find(a => a.id === item.amphure_id);
+            const province = addressData.provinces.find(p => p.id === (amphure ? amphure.province_id : null));
+            if(!amphure || !province) return '';
+            
+            return `
+                <button type="button" class="list-group-item list-group-item-action py-2" 
+                    onclick="selectAddress(${item.id}, ${amphure.id}, ${province.id}, '${item.zip_code}')">
+                    <strong>${item.name_th}</strong> > ${amphure.name_th} > ${province.name_th} (${item.zip_code})
+                </button>
+            `;
+        }).join('');
+    }
 
-  async function submitBooking() {
-    // 1. ตรวจสอบ URL: ต้องลงท้ายด้วย /exec เท่านั้น
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbycv_FGKOy6b_V6xNKag1WuSUp4OUTCUNS1B1h4loctgaaSGX15CinlESgZI6ugR0cr/exec"; 
-    
-    if (cart.length === 0) return alert("กรุณาเพิ่มรถอย่างน้อย 1 คัน");
+    function selectAddress(tId, aId, pId, zip) {
+        document.getElementById('province').value = pId;
+        changeProvince();
+        document.getElementById('amphure').value = aId;
+        changeAmphure();
+        document.getElementById('tambon').value = tId;
+        document.getElementById('zipcode').value = zip;
+        document.getElementById('searchResult').innerHTML = '';
+        document.getElementById('addressSearch').value = '';
+    }
 
-    const data = {
-        customerName: document.getElementById('custName').value,
-        phone: document.getElementById('phone').value,
-        address: document.getElementById('address').value,
-        mapUrl: document.getElementById('mapUrl').value,
-        appointment: document.getElementById('appointTime').value,
-        cars: cart
-    };
+    // --- ระบบคำนวณราคา ---
+    function updatePriceOptions() {
+        const type = document.getElementById('vType').value;
+        const sizeSelect = document.getElementById('vSize');
+        const evOpt = document.getElementById('evOption');
+        const chainOpt = document.getElementById('chainOption');
 
-    try {
-        const btn = document.querySelector("button[onclick='submitBooking()']");
-        btn.innerText = "กำลังบันทึก..."; btn.disabled = true;
+        sizeSelect.innerHTML = '';
+        if (type === 'car') {
+            sizeSelect.innerHTML = `<option value="S">S (Yaris, City)</option><option value="M">M (Civic, Altis)</option><option value="L">L (SUV, กระบะ)</option>`;
+            evOpt.style.display = 'block';
+            chainOpt.style.display = 'none';
+        } else {
+            const label = type === 'bike' ? 'ทั่วไป' : (type === 'bigBike' ? '300cc+' : '6 ล้อขึ้นไป');
+            sizeSelect.innerHTML = `<option value="${label}">${label}</option>`;
+            evOpt.style.display = 'none';
+            chainOpt.style.display = (type === 'bike' || type === 'bigBike') ? 'block' : 'none';
+        }
+        setBasePrice();
+    }
 
-        // แก้ไขตรงนี้: ใช้ no-cors และส่งแบบ text/plain
-        await fetch(WEB_APP_URL, { 
-            method: 'POST', 
-            mode: 'no-cors', 
-            cache: 'no-cache',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(data) 
+    function setBasePrice() {
+        const type = document.getElementById('vType').value;
+        const size = document.getElementById('vSize').value;
+        document.getElementById('manualPrice').value = defaultPrices[type][size] || 0;
+        calculateCurrentPrice();
+    }
+
+    function calculateCurrentPrice() {
+        const type = document.getElementById('vType').value;
+        let basePrice = parseInt(document.getElementById('manualPrice').value) || 0;
+        let discount = parseInt(document.getElementById('individualDiscount').value) || 0;
+        let extra = 0;
+
+        const isEV = document.getElementById('isEV');
+        const isChain = document.getElementById('isChainClean');
+        if (type === 'car' && isEV.checked) extra += 100;
+        if ((type === 'bike' || type === 'bigBike') && isChain.checked) extra += 120;
+
+        let finalPrice = (basePrice + extra) - discount;
+        document.getElementById('currentPriceDisplay').innerText = finalPrice < 0 ? 0 : finalPrice;
+    }
+
+    // --- ตะกร้าสินค้า ---
+    function addCar() {
+        const typeSelect = document.getElementById('vType');
+        const sizeSelect = document.getElementById('vSize');
+        const price = parseInt(document.getElementById('currentPriceDisplay').innerText);
+        
+        if(price <= 0) {
+            alert("กรุณาระบุราคารถให้ถูกต้อง");
+            return;
+        }
+
+        const car = {
+            typeName: typeSelect.options[typeSelect.selectedIndex].text,
+            size: sizeSelect.value,
+            basePrice: document.getElementById('manualPrice').value,
+            discount: document.getElementById('individualDiscount').value,
+            addon: document.getElementById('isEV').checked ? "EV" : (document.getElementById('isChainClean').checked ? "ล้างโซ่" : "-"),
+            price: price
+        };
+
+        cart.push(car);
+        renderCart();
+        
+        // Reset inputs
+        document.getElementById('individualDiscount').value = 0;
+        document.getElementById('isEV').checked = false;
+        document.getElementById('isChainClean').checked = false;
+    }
+
+    function renderCart() {
+        const list = document.getElementById('carList');
+        if (cart.length === 0) {
+            list.innerHTML = '<p class="text-muted text-center">ยังไม่มีรายการรถที่เพิ่มเข้ามา</p>';
+            document.getElementById('totalPrice').innerText = '0';
+            document.getElementById('discountNote').innerText = '';
+            return;
+        }
+
+        list.innerHTML = '';
+        let total = 0;
+        cart.forEach((item, index) => {
+            total += item.price;
+            list.innerHTML += `
+                <div class="car-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="text-dark">${item.typeName}</strong> <span class="badge bg-secondary">${item.size}</span>
+                        <br><small class="text-muted">เสริม: ${item.addon} | ลด: ${item.discount}฿</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-success">${item.price} ฿</div>
+                        <button class="btn btn-sm btn-outline-danger border-0" onclick="removeFromCart(${index})">ลบ</button>
+                    </div>
+                </div>`;
         });
 
-        // เมื่อใช้ no-cors เราจะเช็ก Success ไม่ได้ 
-        // แต่ถ้าโค้ดไม่กระโดดไปที่ catch แสดงว่าข้อมูลถูกส่งออกไปแล้ว
-        alert("ส่งข้อมูลเรียบร้อย! กรุณาเช็กที่ Google Sheet");
-        location.reload();
+        let finalTotal = total;
+        let note = "";
+        if (cart.length >= 10) {
+            finalTotal *= 0.85;
+            note = "🎉 ส่วนลดกลุ่ม 10 คันขึ้นไป (-15%)";
+        } else if (cart.length >= 5) {
+            finalTotal *= 0.90;
+            note = "🎉 ส่วนลดกลุ่ม 5 คันขึ้นไป (-10%)";
+        }
+        
+        document.getElementById('totalPrice').innerText = Math.round(finalTotal).toLocaleString();
+        document.getElementById('discountNote').innerText = note;
+    }
 
-    } catch (e) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + e.message);
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        renderCart();
+    }
+
+    // --- ส่งข้อมูล ---
+    async function submitBooking() {
         const btn = document.querySelector("button[onclick='submitBooking()']");
-        btn.innerText = "ยืนยันการจองคิว"; btn.disabled = false;
+        try {
+            const pEl = document.getElementById('province');
+            const name = document.getElementById('custName').value;
+            const phone = document.getElementById('phone').value;
+            const time = document.getElementById('appointTime').value;
+
+            if (!pEl.value || !phone || !time) {
+                alert("⚠️ กรุณากรอกเบอร์โทร ที่อยู่ และวันเวลานัดหมายให้ครบถ้วน");
+                return;
+            }
+            if (cart.length === 0) {
+                alert("🛒 กรุณาเพิ่มรถอย่างน้อย 1 คัน");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "กำลังบันทึกข้อมูล...";
+
+            const fullAddress = `${document.getElementById('addressDetail').value} ต.${document.getElementById('tambon').options[document.getElementById('tambon').selectedIndex].text} อ.${document.getElementById('amphure').options[document.getElementById('amphure').selectedIndex].text} จ.${pEl.options[pEl.selectedIndex].text} ${document.getElementById('zipcode').value}`;
+            
+            const data = {
+                customerName: name,
+                phone: phone,
+                address: fullAddress,
+                mapUrl: document.getElementById('mapUrl').value,
+                appointment: time,
+                cars: cart,
+                totalPrice: document.getElementById('totalPrice').innerText
+            };
+
+            await fetch(WEB_APP_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(data) 
+            });
+
+            alert("✅ ส่งข้อมูลการจองสำเร็จ! เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด");
+            location.reload();
+
+        } catch (e) {
+            alert("เกิดข้อผิดพลาด: " + e.message);
+            btn.disabled = false;
+            btn.innerText = "ยืนยันการจองคิว";
+        }
+    }
+
+    // --- ระบบประวัติ ---
+    let isFetching = false;
+    async function checkHistory(phone) {
+    // ต้องพิมพ์ครบ 10 หลักถึงจะเริ่มหา
+    if (phone.length === 10) {
+        console.log("กำลังค้นหาเบอร์:", phone);
+        
+
+        try {
+            const response = await fetch(`${WEB_APP_URL}?action=getHistory&phone=${phone}`);
+            
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+
+            if (data.found) {
+                // กรอกข้อมูลลงฟอร์ม
+                document.getElementById('custName').value = data.name || '';
+                
+                // ตรวจสอบว่าใช้ ID address หรือ addressDetail
+                const addrField = document.getElementById('addressDetail') || document.getElementById('address');
+                if (addrField) addrField.value = data.address || '';
+                
+                if (document.getElementById('mapUrl')) {
+                    document.getElementById('mapUrl').value = data.mapUrl || '';
+                }
+                
+                alert("✨ พบข้อมูลเก่า! ระบบกรอกข้อมูลให้เรียบร้อยแล้วครับ");
+            } else {
+                console.log("ไม่พบเบอร์นี้ในระบบ");
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        }
     }
 }
 
-  window.onload = updatePriceOptions;
+    window.addEventListener('DOMContentLoaded', () => {
+        loadAddressData();
+        updatePriceOptions();
+    });
 </script>
 </body>
 </html>
