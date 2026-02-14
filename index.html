@@ -223,37 +223,41 @@
   }
 
   async function submitBooking() {
-      // ใส่ URL ของคุณตรงนี้
-      const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzGRKEP613XIOxhfKj1lKwdqCehojyFCKLIcGVPnv7CSYLHwgIzzom1jmma8wpnnsRi/exec"; 
-      
-      if (cart.length === 0) return alert("กรุณาเพิ่มรถอย่างน้อย 1 คัน");
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbybACtyM8WahfZvrXVsxY1xqHuKEgWrGX8gVHeDZBUcM6vSy_CLbip3KqGeoOcDLvic/exec"; 
+    
+    if (cart.length === 0) return alert("กรุณาเพิ่มรถอย่างน้อย 1 คัน");
 
-      const data = {
-          customerName: document.getElementById('custName').value,
-          phone: document.getElementById('phone').value,
-          address: document.getElementById('address').value,
-          mapUrl: document.getElementById('mapUrl').value,
-          appointment: document.getElementById('appointTime').value,
-          cars: cart
-      };
+    const data = {
+        customerName: document.getElementById('custName').value,
+        phone: document.getElementById('phone').value,
+        address: document.getElementById('address').value,
+        mapUrl: document.getElementById('mapUrl').value,
+        appointment: document.getElementById('appointTime').value,
+        cars: cart
+    };
 
-      try {
-          const btn = document.querySelector("button[onclick='submitBooking()']");
-          btn.innerText = "กำลังบันทึก..."; btn.disabled = true;
+    try {
+        const btn = document.querySelector("button[onclick='submitBooking()']");
+        btn.innerText = "กำลังบันทึก..."; btn.disabled = true;
 
-          // ใช้โหมดปกติเพื่อให้เช็คได้ว่าส่งผ่านไหม (เอา no-cors ออกเพื่อทดสอบ)
-          await fetch(WEB_APP_URL, { 
-              method: 'POST', 
-              body: JSON.stringify(data) 
-          });
+        await fetch(WEB_APP_URL, { 
+            method: 'POST', 
+            mode: 'cors', // เปลี่ยนเป็น cors
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8', // ใช้ text/plain เพื่อเลี่ยง Preflight
+            },
+            body: JSON.stringify(data) 
+        });
 
-          alert("จองสำเร็จ! ตรวจสอบในชีท Data 2026");
-          location.reload();
-      } catch (e) {
-          alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-          console.error(e);
-      }
-  }
+        alert("จองสำเร็จ! ตรวจสอบในชีท Data 2026");
+        location.reload();
+    } catch (e) {
+        alert("เกิดข้อผิดพลาด: " + e.message);
+        console.error(e);
+        const btn = document.querySelector("button[onclick='submitBooking()']");
+        btn.innerText = "ยืนยันการจองคิว"; btn.disabled = false;
+    }
+}
 
   window.onload = updatePriceOptions;
 </script>
