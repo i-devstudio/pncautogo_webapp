@@ -244,7 +244,6 @@
           // ใช้โหมดปกติเพื่อให้เช็คได้ว่าส่งผ่านไหม (เอา no-cors ออกเพื่อทดสอบ)
           await fetch(WEB_APP_URL, { 
               method: 'POST', 
-              mode: 'no-cors', 
               body: JSON.stringify(data) 
           });
 
