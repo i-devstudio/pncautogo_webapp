@@ -127,18 +127,18 @@
   };
 
   function getLocation() {
-      if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(function(pos) {
-              const lat = pos.coords.latitude;
-              const lng = pos.coords.longitude;
-              // แก้ไขจุดที่พิมพ์ผิดตรงนี้แล้ว ($lat)
-              document.getElementById('mapUrl').value = `https://www.google.com/maps?q=${lat},${lng}`;
-              alert("📍 ปักหมุดพิกัดสำเร็จ!");
-          }, function(error) {
-              alert("ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS");
-          });
-      }
-  }
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            // แก้ไขจาก 0{lat} เป็น ${lat} และใช้ Google Maps URL มาตรฐาน
+            document.getElementById('mapUrl').value = `https://www.google.com/maps?q=${lat},${lng}`;
+            alert("📍 ปักหมุดพิกัดสำเร็จ!");
+        }, function(error) {
+            alert("ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS");
+        });
+    }
+}
 
   function updatePriceOptions() {
       const type = document.getElementById('vType').value;
