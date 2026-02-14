@@ -223,6 +223,7 @@
   }
 
   async function submitBooking() {
+    // 1. ตรวจสอบ URL: ต้องลงท้ายด้วย /exec เท่านั้น
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzov8J1aC3-Pv-6trRUD-7Ll5rk6yyOxN5RyEXmWH7ozetseXQfXxBPx_Q-egpX6Krv/exec"; 
     
     if (cart.length === 0) return alert("กรุณาเพิ่มรถอย่างน้อย 1 คัน");
@@ -240,20 +241,22 @@
         const btn = document.querySelector("button[onclick='submitBooking()']");
         btn.innerText = "กำลังบันทึก..."; btn.disabled = true;
 
+        // แก้ไขตรงนี้: ใช้ no-cors และส่งแบบ text/plain
         await fetch(WEB_APP_URL, { 
             method: 'POST', 
             mode: 'no-cors', 
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8', // ใช้ text/plain เพื่อเลี่ยง Preflight
-            },
+            cache: 'no-cache',
+            headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify(data) 
         });
 
-        alert("จองสำเร็จ! ตรวจสอบในชีท Data 2026");
+        // เมื่อใช้ no-cors เราจะเช็ก Success ไม่ได้ 
+        // แต่ถ้าโค้ดไม่กระโดดไปที่ catch แสดงว่าข้อมูลถูกส่งออกไปแล้ว
+        alert("ส่งข้อมูลเรียบร้อย! กรุณาเช็กที่ Google Sheet");
         location.reload();
+
     } catch (e) {
-        alert("เกิดข้อผิดพลาด: " + e.message);
-        console.error(e);
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + e.message);
         const btn = document.querySelector("button[onclick='submitBooking()']");
         btn.innerText = "ยืนยันการจองคิว"; btn.disabled = false;
     }
