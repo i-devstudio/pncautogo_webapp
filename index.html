@@ -183,26 +183,28 @@
   }
 
   function addCar() {
-      const typeSelect = document.getElementById('vType');
-      const chainClean = document.getElementById('isChainClean');
-      const isEV = document.getElementById('isEV');
-      
-      const car = {
-          typeName: typeSelect.options[typeSelect.selectedIndex].text,
-          size: document.getElementById('vSize').value,
-          basePrice: document.getElementById('manualPrice').value,
-          // แก้ไขจุดที่ทำให้โค้ดพังตรงนี้
-          addon: (chainClean && chainClean.checked) ? "ล้างโซ่" : (isEV && isEV.checked ? "EV" : "-"),
-          discount: document.getElementById('individualDiscount').value,
-          price: parseInt(document.getElementById('currentPriceDisplay').innerText)
-      };
-      cart.push(car);
-      renderCart();
-      
-      document.getElementById('individualDiscount').value = 0;
-      if(chainClean) chainClean.checked = false;
-      if(isEV) isEV.checked = false;
-  }
+    const typeSelect = document.getElementById('vType');
+    const chainClean = document.getElementById('isChainClean');
+    const isEV = document.getElementById('isEV');
+    const basePriceInput = document.getElementById('manualPrice').value;
+    const discountInput = document.getElementById('individualDiscount').value;
+    
+    const car = {
+        typeName: typeSelect.options[typeSelect.selectedIndex].text,
+        size: document.getElementById('vSize').value,
+        basePrice: basePriceInput, // ราคาประเมิน/แก้ไข
+        discount: discountInput,   // ส่วนลดรายคัน
+        addon: (chainClean && chainClean.checked) ? "ล้างโซ่" : (isEV && isEV.checked ? "EV" : "-"),
+        price: parseInt(document.getElementById('currentPriceDisplay').innerText) // ราคาสุทธิคันนี้
+    };
+    cart.push(car);
+    renderCart();
+    
+    // Reset ค่าส่วนลดหลังเพิ่มรถเสร็จ
+    document.getElementById('individualDiscount').value = 0;
+    if(chainClean) chainClean.checked = false;
+    if(isEV) isEV.checked = false;
+}
 
   function renderCart() {
       const list = document.getElementById('carList');
@@ -224,7 +226,7 @@
 
   async function submitBooking() {
     // 1. ตรวจสอบ URL: ต้องลงท้ายด้วย /exec เท่านั้น
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxB0ZWtbCpxkA19PcE2GYHA4k2WaKql0POAp1fh3WIKGDBykmO0Q4qwudP9Gx2dnuRm/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbycv_FGKOy6b_V6xNKag1WuSUp4OUTCUNS1B1h4loctgaaSGX15CinlESgZI6ugR0cr/exec"; 
     
     if (cart.length === 0) return alert("กรุณาเพิ่มรถอย่างน้อย 1 คัน");
 
