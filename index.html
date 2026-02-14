@@ -119,8 +119,6 @@
 
 <script>
   let cart = [];
-  
-  // ตารางราคาอ้างอิงสำหรับ Auto-fill
   const defaultPrices = {
       car: { S: 350, M: 450, L: 550 },
       bigCar: { '6 ล้อขึ้นไป': 600 },
@@ -128,45 +126,50 @@
       bigBike: { '300cc+': 300 }
   };
 
+  // 📍 ฟังก์ชันปักหมุดพิกัดปัจจุบัน
+  function getLocation() {
+      if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(pos) {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              document.getElementById('mapUrl').value = `https://www.google.com/maps?q=${lat},${lng}`;
+              alert("📍 ปักหมุดพิกัดสำเร็จ!");
+          }, function(error) {
+              alert("กรุณาอนุญาตการเข้าถึงตำแหน่ง หรือพิมพ์ที่อยู่ด้วยตนเอง");
+          });
+      }
+  }
+
+  // 🔄 อัปเดตขนาดรถและตัวเลือกเสริมตามประเภทรถ
   function updatePriceOptions() {
       const type = document.getElementById('vType').value;
       const sizeSelect = document.getElementById('vSize');
       const evOpt = document.getElementById('evOption');
       const chainOpt = document.getElementById('chainOption');
-      
-      // 1. จัดการตัวเลือก ขนาด/รุ่น ตามประเภทรถ
+
       sizeSelect.innerHTML = '';
       if (type === 'car') {
-          sizeSelect.innerHTML = `
-              <option value="S">S (Yaris, City)</option>
-              <option value="M">M (Civic, Altis)</option>
-              <option value="L">L (SUV, กระบะ)</option>`;
+          sizeSelect.innerHTML = `<option value="S">S (Yaris, City)</option><option value="M">M (Civic, Altis)</option><option value="L">L (SUV, กระบะ)</option>`;
           evOpt.style.display = 'block';
           chainOpt.style.display = 'none';
-      } else if (type === 'bike' || type === 'bigBike') {
-          const label = type === 'bike' ? 'ทั่วไป' : '300cc+';
+      } else {
+          const label = type === 'bike' ? 'ทั่วไป' : (type === 'bigBike' ? '300cc+' : '6 ล้อขึ้นไป');
           sizeSelect.innerHTML = `<option value="${label}">${label}</option>`;
           evOpt.style.display = 'none';
-          chainOpt.style.display = 'block';
-      } else {
-          sizeSelect.innerHTML = `<option value="6 ล้อขึ้นไป">6 ล้อขึ้นไป</option>`;
-          evOpt.style.display = 'none';
-          chainOpt.style.display = 'none';
+          chainOpt.style.display = (type === 'bike' || type === 'bigBike') ? 'block' : 'none';
       }
-
       setBasePrice();
   }
 
-  // ฟังก์ชันตั้งราคาเริ่มต้นในช่อง "ราคาประเมิน"
+  // 💰 ตั้งราคาเริ่มต้นในช่องที่แก้ไขได้
   function setBasePrice() {
       const type = document.getElementById('vType').value;
       const size = document.getElementById('vSize').value;
-      const manualPriceInput = document.getElementById('manualPrice');
-      
-      manualPriceInput.value = defaultPrices[type][size] || 0;
+      document.getElementById('manualPrice').value = defaultPrices[type][size] || 0;
       calculateCurrentPrice();
   }
 
+  // 🧮 คำนวณราคารถคันปัจจุบัน (ราคาประเมิน + เสริม - ส่วนลด)
   function calculateCurrentPrice() {
       const type = document.getElementById('vType').value;
       let basePrice = parseInt(document.getElementById('manualPrice').value) || 0;
@@ -174,122 +177,82 @@
       let extra = 0;
 
       if (type === 'car' && document.getElementById('isEV').checked) extra += 100;
-      if ((type === 'bike' || type === 'bigBike') && document.getElementById('isChainClean').checked) extra += 120;
+      if (document.getElementById('isChainClean') && document.getElementById('isChainClean').checked) extra += 120;
 
       let finalPrice = (basePrice + extra) - discount;
       document.getElementById('currentPriceDisplay').innerText = finalPrice < 0 ? 0 : finalPrice;
   }
 
+  // 🛒 เพิ่มรถลงรายการจอง
   function addCar() {
       const typeSelect = document.getElementById('vType');
-      const sizeSelect = document.getElementById('vSize');
-      
       const car = {
-          typeName: typeSelect.options[typeSelect.selectedIndex].text, // เก็บชื่อไทย เช่น "รถยนต์ทั่วไป"
-          size: sizeSelect.value,
+          typeName: typeSelect.options[typeSelect.selectedIndex].text,
+          size: document.getElementById('vSize').value,
           basePrice: document.getElementById('manualPrice').value,
-          addon: document.getElementById('isChainClean').checked ? "ล้างโซ่" : (document.getElementById('isEV').checked ? "EV" : "-"),
+          addon: document.getElementById('isChainClean') && document.getElementById('isChainClean').checked ? "ล้างโซ่" : (document.getElementById('isEV').checked ? "EV" : "-"),
           discount: document.getElementById('individualDiscount').value,
           price: parseInt(document.getElementById('currentPriceDisplay').innerText)
       };
-      
       cart.push(car);
       renderCart();
       
-      // Reset inputs
+      // Reset inputs หลังเพิ่มรถ
       document.getElementById('individualDiscount').value = 0;
-      document.getElementById('isChainClean').checked = false;
+      if(document.getElementById('isChainClean')) document.getElementById('isChainClean').checked = false;
       document.getElementById('isEV').checked = false;
-      setBasePrice(); 
   }
 
+  // 📋 แสดงรายการในตะกร้าและส่วนลดกลุ่ม
   function renderCart() {
       const list = document.getElementById('carList');
       list.innerHTML = '';
       let total = 0;
-      
-      if (cart.length === 0) {
-          list.innerHTML = '<p class="text-muted text-center">ยังไม่มีรายการรถ</p>';
-      }
-
       cart.forEach((item, index) => {
           total += item.price;
-          list.innerHTML += `
-              <div class="car-item d-flex justify-content-between align-items-center mb-2 p-2 border-start border-4 border-success bg-white shadow-sm">
-                  <div>
-                      <b>${item.typeName}</b> <small class="text-muted">(${item.size})</small><br>
-                      <small>ราคา: ${item.price} ฿ (ลด ${item.discount} / เพิ่ม ${item.addon})</small>
-                  </div>
-                  <button class="btn btn-sm btn-outline-danger" onclick="cart.splice(${index},1); renderCart();">ลบ</button>
-              </div>`;
+          list.innerHTML += `<div class="car-item d-flex justify-content-between align-items-center mb-2 p-2 border border-success rounded bg-white shadow-sm">
+              <div><b>${item.typeName} (${item.size})</b><br><small>ราคา ${item.price} ฿ (ลด ${item.discount})</small></div>
+              <button class="btn btn-sm btn-danger" onclick="cart.splice(${index},1); renderCart();">ลบ</button>
+          </div>`;
       });
       
-      // Promotion Logic (ส่วนลดท้ายบิล)
-      let promoText = "";
-      if (cart.length >= 10) {
-          total *= 0.85;
-          promoText = " (ลดกลุ่ม 15%)";
-      } else if (cart.length >= 5) {
-          total *= 0.90;
-          promoText = " (ลดกลุ่ม 10%)";
-      }
-
-      document.getElementById('totalPrice').innerText = Math.round(total) + promoText;
+      let finalTotal = total;
+      if (cart.length >= 10) finalTotal *= 0.85; // ลด 15%
+      else if (cart.length >= 5) finalTotal *= 0.90; // ลด 10%
+      
+      document.getElementById('totalPrice').innerText = Math.round(finalTotal);
   }
 
-  // ... (getLocation และ submitBooking ใช้ของเดิมได้เลยครับ) ...
-    function getLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                document.getElementById('mapUrl').value = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                alert("ปักหมุดสำเร็จ!");
-            });
-        }
-    }
+  // 📤 ส่งข้อมูลทั้งหมดเข้า Google Sheets
+  async function submitBooking() {
+      const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzfXbtlrDzyb5bSVKtRijZuVByhKa58d8iNxrSzYLBcNuS2GMdeD7BYomEmiIJdzPGO/exec"; 
+      if (cart.length === 0) return alert("กรุณาเพิ่มรถอย่างน้อย 1 คัน");
 
-    async function submitBooking() {
-    // แทนที่ตรงนี้ด้วย URL ที่ได้จากตอนกด Deploy ใน Google Apps Script
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz74EOmoVL3NLCZpVc6lx68cy8ATpulBW05TU3Iu0x0OvNTozzO4BoizVLe6ktmkFe0/exec"; 
+      const data = {
+          customerName: document.getElementById('custName').value,
+          phone: document.getElementById('phone').value,
+          address: document.getElementById('address').value,
+          mapUrl: document.getElementById('mapUrl').value,
+          appointment: document.getElementById('appointTime').value,
+          cars: cart
+      };
 
-    const data = {
-        customerName: document.getElementById('custName').value,
-        phone: document.getElementById('phone').value,
-        address: document.getElementById('address').value,
-        mapUrl: document.getElementById('mapUrl').value,
-        appointment: document.getElementById('appointTime').value,
-        cars: cart
-    };
+      try {
+          const btn = document.querySelector("button[onclick='submitBooking()']");
+          btn.innerText = "กำลังบันทึกข้อมูล..."; btn.disabled = true;
 
-    if (cart.length === 0) {
-        alert("กรุณาเพิ่มรายการรถอย่างน้อย 1 คัน");
-        return;
-    }
+          await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
 
-    try {
-        // เปลี่ยนสถานะปุ่มเพื่อป้องกันการกดซ้ำ
-        const btn = document.querySelector("button[onclick='submitBooking()']");
-        btn.innerText = "กำลังส่งข้อมูล...";
-        btn.disabled = true;
+          alert("การจองเสร็จสมบูรณ์! ข้อมูลบันทึกลงชีท Data 2026 เรียบร้อย");
+          location.reload();
+      } catch (e) {
+          alert("เกิดข้อผิดพลาด โปรดลองใหม่อีกครั้ง");
+          btn.disabled = false;
+          btn.innerText = "ยืนยันการจองคิว";
+      }
+  }
 
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'no-cors', // สำคัญ: เพื่อให้ส่งข้าม Domain ไป Google ได้
-            cache: 'no-cache',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        alert("จองคิวสำเร็จ! ขอบคุณที่ใช้บริการครับ");
-        location.reload(); // รีโหลดหน้าเว็บเพื่อล้างข้อมูลใหม่
-
-    } catch (error) {
-        console.error(error);
-        alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่หรือติดต่อทาง Line");
-    }
-}
-
-    updatePriceOptions();
+  window.onload = updatePriceOptions;
 </script>
-
 </body>
 </html>
