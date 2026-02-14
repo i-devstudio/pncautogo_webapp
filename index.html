@@ -238,6 +238,57 @@
   }
 
   // ... (getLocation และ submitBooking ใช้ของเดิมได้เลยครับ) ...
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('mapUrl').value = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                alert("ปักหมุดสำเร็จ!");
+            });
+        }
+    }
+
+    async function submitBooking() {
+    // แทนที่ตรงนี้ด้วย URL ที่ได้จากตอนกด Deploy ใน Google Apps Script
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz74EOmoVL3NLCZpVc6lx68cy8ATpulBW05TU3Iu0x0OvNTozzO4BoizVLe6ktmkFe0/exec"; 
+
+    const data = {
+        customerName: document.getElementById('custName').value,
+        phone: document.getElementById('phone').value,
+        address: document.getElementById('address').value,
+        mapUrl: document.getElementById('mapUrl').value,
+        appointment: document.getElementById('appointTime').value,
+        cars: cart
+    };
+
+    if (cart.length === 0) {
+        alert("กรุณาเพิ่มรายการรถอย่างน้อย 1 คัน");
+        return;
+    }
+
+    try {
+        // เปลี่ยนสถานะปุ่มเพื่อป้องกันการกดซ้ำ
+        const btn = document.querySelector("button[onclick='submitBooking()']");
+        btn.innerText = "กำลังส่งข้อมูล...";
+        btn.disabled = true;
+
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors', // สำคัญ: เพื่อให้ส่งข้าม Domain ไป Google ได้
+            cache: 'no-cache',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        alert("จองคิวสำเร็จ! ขอบคุณที่ใช้บริการครับ");
+        location.reload(); // รีโหลดหน้าเว็บเพื่อล้างข้อมูลใหม่
+
+    } catch (error) {
+        console.error(error);
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่หรือติดต่อทาง Line");
+    }
+}
+
+    updatePriceOptions();
 </script>
 
 </body>
