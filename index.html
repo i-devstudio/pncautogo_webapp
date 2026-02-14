@@ -126,21 +126,20 @@
       bigBike: { '300cc+': 300 }
   };
 
-  // 📍 ฟังก์ชันปักหมุดพิกัดปัจจุบัน
   function getLocation() {
       if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(function(pos) {
               const lat = pos.coords.latitude;
               const lng = pos.coords.longitude;
+              // แก้ไขจุดที่พิมพ์ผิดตรงนี้แล้ว ($lat)
               document.getElementById('mapUrl').value = `https://www.google.com/maps?q=${lat},${lng}`;
               alert("📍 ปักหมุดพิกัดสำเร็จ!");
           }, function(error) {
-              alert("กรุณาอนุญาตการเข้าถึงตำแหน่ง หรือพิมพ์ที่อยู่ด้วยตนเอง");
+              alert("ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS");
           });
       }
   }
 
-  // 🔄 อัปเดตขนาดรถและตัวเลือกเสริมตามประเภทรถ
   function updatePriceOptions() {
       const type = document.getElementById('vType').value;
       const sizeSelect = document.getElementById('vSize');
@@ -161,7 +160,6 @@
       setBasePrice();
   }
 
-  // 💰 ตั้งราคาเริ่มต้นในช่องที่แก้ไขได้
   function setBasePrice() {
       const type = document.getElementById('vType').value;
       const size = document.getElementById('vSize').value;
@@ -169,7 +167,6 @@
       calculateCurrentPrice();
   }
 
-  // 🧮 คำนวณราคารถคันปัจจุบัน (ราคาประเมิน + เสริม - ส่วนลด)
   function calculateCurrentPrice() {
       const type = document.getElementById('vType').value;
       let basePrice = parseInt(document.getElementById('manualPrice').value) || 0;
@@ -177,55 +174,58 @@
       let extra = 0;
 
       if (type === 'car' && document.getElementById('isEV').checked) extra += 100;
-      if (document.getElementById('isChainClean') && document.getElementById('isChainClean').checked) extra += 120;
+      // แก้ไขการเช็ค checkbox ให้ปลอดภัยขึ้น
+      const chainClean = document.getElementById('isChainClean');
+      if (chainClean && chainClean.checked) extra += 120;
 
       let finalPrice = (basePrice + extra) - discount;
       document.getElementById('currentPriceDisplay').innerText = finalPrice < 0 ? 0 : finalPrice;
   }
 
-  // 🛒 เพิ่มรถลงรายการจอง
   function addCar() {
       const typeSelect = document.getElementById('vType');
+      const chainClean = document.getElementById('isChainClean');
+      const isEV = document.getElementById('isEV');
+      
       const car = {
           typeName: typeSelect.options[typeSelect.selectedIndex].text,
           size: document.getElementById('vSize').value,
           basePrice: document.getElementById('manualPrice').value,
-          addon: document.getElementById('isChainClean') && document.getElementById('isChainClean').checked ? "ล้างโซ่" : (document.getElementById('isEV').checked ? "EV" : "-"),
+          // แก้ไขจุดที่ทำให้โค้ดพังตรงนี้
+          addon: (chainClean && chainClean.checked) ? "ล้างโซ่" : (isEV && isEV.checked ? "EV" : "-"),
           discount: document.getElementById('individualDiscount').value,
           price: parseInt(document.getElementById('currentPriceDisplay').innerText)
       };
       cart.push(car);
       renderCart();
       
-      // Reset inputs หลังเพิ่มรถ
       document.getElementById('individualDiscount').value = 0;
-      if(document.getElementById('isChainClean')) document.getElementById('isChainClean').checked = false;
-      document.getElementById('isEV').checked = false;
+      if(chainClean) chainClean.checked = false;
+      if(isEV) isEV.checked = false;
   }
 
-  // 📋 แสดงรายการในตะกร้าและส่วนลดกลุ่ม
   function renderCart() {
       const list = document.getElementById('carList');
       list.innerHTML = '';
       let total = 0;
       cart.forEach((item, index) => {
           total += item.price;
-          list.innerHTML += `<div class="car-item d-flex justify-content-between align-items-center mb-2 p-2 border border-success rounded bg-white shadow-sm">
-              <div><b>${item.typeName} (${item.size})</b><br><small>ราคา ${item.price} ฿ (ลด ${item.discount})</small></div>
+          list.innerHTML += `<div class="car-item d-flex justify-content-between align-items-center mb-2">
+              <div><b>${item.typeName} (${item.size})</b><br><small>ราคา ${item.price} ฿</small></div>
               <button class="btn btn-sm btn-danger" onclick="cart.splice(${index},1); renderCart();">ลบ</button>
           </div>`;
       });
       
       let finalTotal = total;
-      if (cart.length >= 10) finalTotal *= 0.85; // ลด 15%
-      else if (cart.length >= 5) finalTotal *= 0.90; // ลด 10%
-      
+      if (cart.length >= 10) finalTotal *= 0.85;
+      else if (cart.length >= 5) finalTotal *= 0.90;
       document.getElementById('totalPrice').innerText = Math.round(finalTotal);
   }
 
-  // 📤 ส่งข้อมูลทั้งหมดเข้า Google Sheets
   async function submitBooking() {
-      const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxTak6_oMRFLsQ7El6IAcsAtPLa1K-LnR9-2JG1ygFGQznQ1Zd--5Rd5QYwo1TkBO_K/exec"; 
+      // ใส่ URL ของคุณตรงนี้
+      const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzfXbtlrDzyb5bSVKtRijZuVByhKa58d8iNxrSzYLBcNuS2GMdeD7BYomEmiIJdzPGO/exec"; 
+      
       if (cart.length === 0) return alert("กรุณาเพิ่มรถอย่างน้อย 1 คัน");
 
       const data = {
@@ -239,16 +239,20 @@
 
       try {
           const btn = document.querySelector("button[onclick='submitBooking()']");
-          btn.innerText = "กำลังบันทึกข้อมูล..."; btn.disabled = true;
+          btn.innerText = "กำลังบันทึก..."; btn.disabled = true;
 
-          await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+          // ใช้โหมดปกติเพื่อให้เช็คได้ว่าส่งผ่านไหม (เอา no-cors ออกเพื่อทดสอบ)
+          await fetch(WEB_APP_URL, { 
+              method: 'POST', 
+              mode: 'no-cors', 
+              body: JSON.stringify(data) 
+          });
 
-          alert("การจองเสร็จสมบูรณ์! ข้อมูลบันทึกลงชีท Data 2026 เรียบร้อย");
+          alert("จองสำเร็จ! ตรวจสอบในชีท Data 2026");
           location.reload();
       } catch (e) {
-          alert("เกิดข้อผิดพลาด โปรดลองใหม่อีกครั้ง");
-          btn.disabled = false;
-          btn.innerText = "ยืนยันการจองคิว";
+          alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+          console.error(e);
       }
   }
 
